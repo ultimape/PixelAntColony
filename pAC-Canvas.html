@@ -1,0 +1,339 @@
+<html>
+
+
+<head>
+	<style>
+			
+	html, body {
+		padding:0;
+		margin:0;
+	}
+	
+	* { margin:0; padding:0; } /* to remove the top and left whitespace */
+	html, body { width:100%; height:100%; } /* just to be sure these are full screen*/
+	canvas { display:block; } /* To remove the scrollbars */
+	
+	h1 {
+		text-align:center;
+	}
+	
+	#top-controls {
+		display: block;
+		float: left;
+		margin: 0 auto;
+		width: 400px;
+		border: 1 solid #000000;
+	}
+	
+	#top-controls > div {
+		display:block;
+		float:left;
+		border: 1 solid #FF0000;
+		
+	}
+	
+	button {
+		width:60px;
+	}
+	
+	#gameworld,	
+	#bottomControls {
+		display: block;
+		margin: 0 auto;
+		width:800px;
+		border: 1 solid #000000;
+	}
+	
+	p > b {
+		color:#FFA500;
+	}
+			
+	</style>
+</head>
+<body>
+
+
+<div>
+	<div id='top-controls'>
+		<div name="control-set">
+			Canvas Size: <br/>
+			<button onclick="canvasSize(400,400)">Small</button><br/>
+			<button onclick="canvasSize(800,800)">Medium</button><br/>
+			<button onclick="canvasSize(1900,900)">Large</button><br/>
+			<button onclick="canvasSize(window.innerWidth-20,window.innerHeight-150)">max</button>
+		</div>
+		
+		<div name="control-set">
+			RandomTest <br/>
+			<button onclick="reroll()">reroll!</button><br/>
+		</div>
+		
+		<div name="control-set">
+			Play! <br/>
+			<button onclick="gameStart()">Go</button><br/>
+			<button onclick="gameStop()">Stop</button><br/>
+		</div>
+	</div>
+</div>
+
+<h1>Pixel Ant Colony</h1>
+
+<canvas id="gameworld" width="800" height="300"></canvas>
+
+<div id='bottom-controls'>
+Width:&nbsp;	<span id="canvasWidth"></span>
+Height:&nbsp;	<span id="canvasHeight"></span>
+</div>
+
+<script>
+	
+	
+
+	// all this code is bad, do not look at it, its bad.
+	
+	var widthElem = document.getElementById('canvasWidth');
+	var heightElem = document.getElementById('canvasHeight');
+	var canvas = document.getElementById('gameworld');
+	var context = canvas.getContext('2d');
+	var canvasWidth  = canvas.width;
+	var canvasHeight = canvas.height;
+	var ctx = canvas.getContext('2d');
+	var imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+		
+	var buf = new ArrayBuffer(imageData.data.length);	// a liniar arraybuffer that stores the color data for the image.
+	var buf8 = new Uint8ClampedArray(buf); 				// used to index into the bufer via 8bit ord
+	var data = new Uint32Array(buf);					// used to index into the buffer via a 32 bit ord
+	
+	function render() {
+		pixelRender();
+	}
+	
+	function canvasSize(width,height) {
+		// ajust canvas sizes
+		canvas.width=width;
+		canvas.height=height;
+		canvas.style.width  = width+'px';
+		canvas.style.height = height+'px';
+		
+		// ajust buffers 	
+		canvasWidth  = canvas.width;
+		canvasHeight = canvas.height;
+		imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+		
+		buf = new ArrayBuffer(imageData.data.length);
+		buf8 = new Uint8ClampedArray(buf);
+		data = new Uint32Array(buf);
+		
+		
+		//display it
+		widthElem.textContent	=	canvas.width;
+		heightElem.textContent	=	canvas.height;
+		//document.getElementById('top-controls').style.width = width;
+		document.getElementById('bottom-controls').style.width = width;
+		
+		render();
+	}
+	
+	// Determine whether Uint32 is little- or big-endian.
+	data[1] = 0x0a0b0c0d;
+		
+	function endiannessCheck() {
+		var isLittleEndian = true;
+		if (buf[4] === 0x0a && buf[5] === 0x0b && buf[6] === 0x0c &&
+			buf[7] === 0x0d) {
+			isLittleEndian = false;
+		}
+		return isLittleEndian;
+	}
+	
+	var pixelRender = function () {
+		// highspeed rendering method based on 
+		// https://hacks.mozilla.org/2011/12/faster-canvas-pixel-manipulation-with-typed-arrays/
+		console.log("choosing endianness");
+		// first time in this function, we decide what call to really run
+		if (endiannessCheck()) {
+			pixelRender = lePixelRender;
+		} else {
+			pixelRender = bePixelRender;
+		}
+		
+		// now we call the real function
+		pixelRender();
+	};
+
+	
+	
+	function lePixelRender() {
+		console.log("little endianness");
+		for (var y = 0; y < canvasHeight; ++y) {
+			for (var x = 0; x < canvasWidth; ++x) {
+				var value = x * y & 0xff;
+				
+				data[y * canvasWidth + x] = random.uint32()
+				
+				/*
+					(255   << 24) |    // alpha
+					(value << 16) |    // blue
+					(value <<  8) |    // green
+					 value;            // red
+				*/
+			}
+		}
+		pushToCanvas();
+	}
+	
+	function bePixelRender() {
+		console.log("big endianness");
+		for (y = 0; y < canvasHeight; ++y) {
+			for (x = 0; x < canvasWidth; ++x) {
+				value = x * y & 0xff;
+
+				data[y * canvasWidth + x] = random.uint32()
+				
+				/*
+					(value << 24) |    // red
+					(value << 16) |    // green
+					(value <<  8) |    // blue
+					 255;              // alpha
+				*/
+			}
+		}
+		pushToCanvas()
+	}
+	
+	function pushToCanvas() {
+		console.log("Drawing");
+		imageData.data.set(buf8);
+		ctx.putImageData(imageData, 0, 0);
+	}
+
+
+	function reroll() {
+		pixelRender();
+	}
+	
+	var start = false;
+	var running = false;
+	
+	function gameStart() {
+		
+		start = true;
+		
+		if(!running) {
+			gameLoop(0);
+		}
+	}
+	
+	function gameStop() {
+		start = false;
+	}
+	
+	function gameLoop(time) {
+		reroll();
+		
+		if(start){
+			running = true;
+			window.requestAnimationFrame(gameLoop);
+		}
+		else {
+			running = false;
+			// game is not running
+		}
+	}
+	
+</script>
+
+<script>
+/* Fast random number generator with uint32 support*/
+// From http://baagoe.com/en/RandomMusings/javascript/
+// Johannes Baagøe <baagoe@baagoe.com>, 2010
+function Mash() {
+  var n = 0xefc8249d;
+
+  var mash = function(data) {
+    data = data.toString();
+    for (var i = 0; i < data.length; i++) {
+      n += data.charCodeAt(i);
+      var h = 0.02519603282416938 * n;
+      n = h >>> 0;
+      h -= n;
+      h *= n;
+      n = h >>> 0;
+      h -= n;
+      n += h * 0x100000000; // 2^32
+    }
+    return (n >>> 0) * 2.3283064365386963e-10; // 2^-32
+  };
+
+  mash.version = 'Mash 0.9';
+  return mash;
+}
+
+// From http://baagoe.com/en/RandomMusings/javascript/
+function Alea() {
+  return (function(args) {
+    // Johannes Baagøe <baagoe@baagoe.com>, 2010
+    var s0 = 0;
+    var s1 = 0;
+    var s2 = 0;
+    var c = 1;
+
+    if (args.length == 0) {
+      args = [+new Date()];
+    }
+    var mash = Mash();
+    s0 = mash(' ');
+    s1 = mash(' ');
+    s2 = mash(' ');
+
+    for (var i = 0; i < args.length; i++) {
+      s0 -= mash(args[i]);
+      if (s0 < 0) {
+        s0 += 1;
+      }
+      s1 -= mash(args[i]);
+      if (s1 < 0) {
+        s1 += 1;
+      }
+      s2 -= mash(args[i]);
+      if (s2 < 0) {
+        s2 += 1;
+      }
+    }
+    mash = null;
+
+    var random = function() {
+      var t = 2091639 * s0 + c * 2.3283064365386963e-10; // 2^-32
+      s0 = s1;
+      s1 = s2;
+      return s2 = t - (c = t | 0);
+    };
+    random.uint32 = function() {
+      return random() * 0x100000000; // 2^32
+    };
+    random.fract53 = function() {
+      return random() + 
+        (random() * 0x200000 | 0) * 1.1102230246251565e-16; // 2^-53
+    };
+    random.version = 'Alea 0.9';
+    random.args = args;
+    return random;
+
+  } (Array.prototype.slice.call(arguments)));
+};
+
+var random = Alea();
+console.log(random());
+console.log(random.uint32());
+
+</script>
+
+<script>
+	canvasSize(400,400);
+	
+</script>
+
+
+</body>
+
+</html>
