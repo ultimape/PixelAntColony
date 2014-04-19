@@ -4,9 +4,9 @@
 ## About
 Pixel Ant Colony is an open source ant simulation game.
 
-It is inspired by my obsession with ants. I am attempting to implement a physically based simulation of scent trails and a realistic behavior model (within the limitations of a 2d environment.
+I am attempting to implement a physically based simulation of scent trails and a realistic behavior model (within the limitations of a 2d environment. It originates from by my obsession with ants.
 
-This was originally contracted as a small project by a 3rd party as a benefactor. I plan on growing this project out to a much grander design once I meet the requirements. Our hope is to create something to share our interest in ants and inspire others to learn more about them.
+This was originally contracted as a small project by a 3rd benefactor. I plan on growing this project out to a much grander design once I meet their requirements. Our hope is to create something to share our interest in ants and inspire others to learn more about them.
 
 ## Features
 
@@ -19,7 +19,7 @@ This was originally contracted as a small project by a 3rd party as a benefactor
 The design document is located in a [OneNote Notebook, accessible via microsoft OneDrive][1].
 
 ## Influences
-many of the prototypes leading up to this were simple simulations done using windows.h and low level console primitives. It is heavily influenced by Dwarf Fortress, SimAnt, and Banished.
+Many of the prototypes leading up to this were simple simulations done using windows.h and low level console primitives. It is heavily influenced by Dwarf Fortress, SimAnt, Banished, and Conway's Game of Life.
 
 ## How to install
 Just copy the .html file to your computer and open it with any [modern browser][2].
