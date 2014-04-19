@@ -6,7 +6,7 @@ Pixel Ant Colony is an open source ant simulation game.
 
 It is inspired by my obsession with ants. I am attempting to implement a physically based simulation of scent trails and a realistic behavior model (within the limitations of a 2d enviroment.
 
-Originally contracted as a small project by a 3rd party as a benefactor. As a shared goal, our hope is to create something to share our interest in ants.
+This was originally contracted as a small project by a 3rd party as a benefactor. I plan on growing this project out to a much grander design once I meet the requirements. Our hope is to create something to share our interest in ants and inspire others to learn more about them.
 
 ## Features
 
