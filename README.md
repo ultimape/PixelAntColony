@@ -18,14 +18,16 @@ This was originally contracted as a small project by a 3rd benefactor. I plan on
 ## Design 
 The design document is located in a [OneNote Notebook, accessible via microsoft OneDrive][1].
 
+I am using [Waffle.io][2] to keep track of issues.
+
 ## Influences
 Many of the prototypes leading up to this were simple simulations done using windows.h and low level console primitives. It is heavily influenced by Dwarf Fortress, SimAnt, Banished, and Conway's Game of Life.
 
 ## How to install
-Just copy the .html file to your computer and open it with any [modern browser][2].
+Just copy the .html file to your computer and open it with any [modern browser][3].
 
 ## Contact / Collaborate
-While this is primarily a solo project, I am open to taking pull requests. Feel free to contact me on reddit /u/ultimape or via [Google+][3].
+While this is primarily a solo project, I am open to taking pull requests. Feel free to contact me on reddit /u/ultimape or via [Google+][4].
 
 If you would like to learn more about my background, My 'cv' is available online: https://careers.stackoverflow.com/nicholasperry
 
@@ -33,5 +35,6 @@ If you would like to learn more about my background, My 'cv' is available online
 
 
   [1]: https://skydrive.live.com/redir?page=view&resid=13B6E055D5BD0E7A!2473&authkey=!AP8P3kjBRdoM5io
-  [2]: www.google.com/chrome/
-  [3]: https://plus.google.com/+NicholasPerry-Ape/posts/1tzy7tdHuj4
+  [2]: https://waffle.io/nicholas-perry/pixelantcolony
+  [3]: www.google.com/chrome/
+  [4]: https://plus.google.com/+NicholasPerry-Ape/posts/1tzy7tdHuj4
