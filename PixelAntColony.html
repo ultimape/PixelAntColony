@@ -26,11 +26,11 @@
 					<button onclick="canvasSize(400,400)">Small</button>
 					<button onclick="canvasSize(800,800)">Medium</button>
 					<button onclick="canvasSize(1900,900)">Large</button>
-					<button onclick="canvasSize(window.innerWidth-20,window.innerHeight-20)">Max</button>
-					<br/><br/>
+					<button onclick="canvasSize((window.innerWidth-20)-421,(window.innerHeight-20)-20)">Max</button>
+					<br/>
 					<hr/>
 					H:<input type="number" min="100" max="1200" size="4" step="20" name="width" value="400"/> x
-					W:<input type="number" min="100" max="1920" size="4" step="20" name="height" value="400"/> <br/><br/>
+					W:<input type="number" min="100" max="1920" size="4" step="20" name="height" value="400"/>
 					<button onclick="canvasSize(document.getElementsByName('width')[0].value,document.getElementsByName('height')[0].value)">Set Custom</button>
 				</div>
 			</details>

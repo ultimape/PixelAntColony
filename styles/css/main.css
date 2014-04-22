@@ -19,8 +19,11 @@ line-height:1.125em; /* 16×1.125=18 */
 
 }
 
+
 h1 {
 text-align:center;
+padding-top:0.25em;
+padding-bottom:0.25em;
 }
 
 #right-controls,#left-controls {
