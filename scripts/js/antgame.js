@@ -17,7 +17,7 @@ var buf8 = new Uint8ClampedArray(buf); 				// used to index into the bufer via 8
 var data = new Uint32Array(buf);					// used to index into the buffer via a 32 bit ord
 
 function render() {
-	pixelGen();
+
 	pushToCanvas();
 }
 
@@ -156,18 +156,30 @@ function gameStop() {
 	}
 }
 
+var simSpeed = 60;
+var tickAccum = 0;
+function setSimSpeed(speed) {
+	simSpeed = speed;
+	
+	
+}
+
+
+
 var tickDisplay = document.getElementById('tickDisplay');
 var frameDisplay = document.getElementById('frameDisplay');
 var framerateDisplay = document.getElementById('framerateDisplay');
 var frametimeDisplay = document.getElementById('frametimeDisplay');
 var tickrateDisplay = document.getElementById('tickrateDisplay');
 var ticktimeDisplay = document.getElementById('ticktimeDisplay');
+var frametickDisplay = document.getElementById('frametickDisplay');
 
 // fps calc from https://stackoverflow.com/questions/5078913/html5-canvas-performance-calculating-loops-frames-per-second
 var fps = 0;
 var frameTime=0;
 var now;
-var lastUpdate = (new Date)*1 - 1;
+var lastFrameUpdate = (new Date) *1 - 1;
+var lastTickUpdate = (new Date) *1 - 1;
 // The higher this value, the less the FPS will be affected by quick changes
 // Setting this to 1 will show you the FPS of the last sampled frame only
 var fpsFilter = 5;
@@ -179,18 +191,26 @@ var tpsFilter = 5;
 var tpsUpdateInterval = 1000;
 
 function gameLoop(time) {
-
-	tick();
-
-	pushToCanvas();
-
-	frameCount++;
-	tickCount++;
-	// need to update ticks on a different schedule (accume?)
-	// need to use values from setSimSpeed() - which isn't implemetned
+	now = new Date();
 	
-	frameTime = ((now=new Date) - lastUpdate);
-	tickTime = frameTime;
+	render();
+	
+	frameCount++;
+	frameTime = (now - lastFrameUpdate);
+	lastFrameUpdate = now * 1 - 1;
+	
+	tickAccum++;
+	if(tickAccum >= (60-simSpeed)) {
+		tickCount++;
+		tickTime = (now - lastTickUpdate);
+		lastTickUpdate = now * 1 - 1;
+		tickAccum =0;
+		tick();
+	}
+	
+	
+	
+	
 	
 	//need to store last frame times sepearately from last tick times
 	
@@ -200,7 +220,7 @@ function gameLoop(time) {
 	var thisTickTPS = 1000 / tickTime;
 	tps += (thisTickTPS - tps) / tpsFilter;
 	
-	lastUpdate = now * 1 - 1;
+	
 
 	if(start){
 		running = true;
@@ -220,6 +240,7 @@ setInterval(function(){
 frameDisplay.innerHTML = frameCount;
 	framerateDisplay.innerHTML = fps.toFixed(2) + "fps";
 	if(running) console.log("fps: "+fps.toFixed(2)+"\tframes: "+frameCount);
+	frametickDisplay.innerHTML = simSpeed;
 }, fpsUpdateInterval);
 setInterval(function(){
 	frameDisplay.innerHTML = frameCount;
@@ -246,7 +267,9 @@ console.group("Game Setup");
 console.timeStamp("Game Setup");
 console.time("Game Setup");
 
+
 canvasSize(400,400);
+pixelGen();
 
 console.timeStamp("Game Setup Ended");
 console.timeEnd("Game Setup");
