@@ -1,704 +1,125 @@
 <!DOCTYPE html>
 <html lang="en" style="width:100%">
-	<head>
-	<meta charset="utf-8" />
-	<title>Pixel Ant Colony</title>
-		
-	<link href='https://fonts.googleapis.com/css?family=Press+Start+2P' rel='stylesheet' type='text/css'>
+<head>
+<meta charset="utf-8" />
+<title>Pixel Ant Colony</title>
 	
-	<style>
-			
-	* { margin:0; padding:0; } /* to remove the top and left whitespace */
-	html, body { width:100%; height:100%; } /* just to be sure these are full screen*/
-	canvas { display:block; } /* To remove the scrollbars */
+<!-- pixel font for authenticity -->
+<link href='https://fonts.googleapis.com/css?family=Press+Start+2P' rel='stylesheet' type='text/css'>
+
+<link type="text/css" rel="stylesheet" href="./styles/css/main.css" />
 	
-	html, body {
-		padding:0;
-		margin:0;
-		
-		
-		font-family: 'Press Start 2P', cursive;
-		font-size:100%;
-		font-size:0.875em; /* 16x.875=14 */
-		
-		line-height:1.125em; /* 16◊1.125=18 */
-	}
-	
-	h1,h2,h3,h4,h5,h6 {
-		line-height:1.125em; /* 16◊1.125=18 */
-	
-	}
-	
-	
-	
-	h1 {
-		text-align:center;
-	}
-	
-	#right-controls,#left-controls {
-		display: block;
-		
-		margin: 0 auto;
-		
-		border: 1 solid #000000;
-	}
-	#right-controls {
-		float:right;
-	}
-	#left-controls {
-		float:left;
-	}
-	
-	#right-controls > div {
-		display:block;
-		float:right;
-		border: 1px solid #FF0000;
-	}
-	
-	.control-set > button {
-		min-width:0.36in;
-		min-height:0.36in;
-			font-family: 'Press Start 2P', cursive;
-	}
-	
-	.display {
-		display:block;
-		min-width:1024px;
-		width:100%;
-		text-align:justify
-		float:right;
-		z-index:0;
-	}
-	
-	#gameworld,	
-	#bottomControls {
-		display: block;
-		margin: 0 auto;
-		width:800px;
-		border: 1 solid #000000;
-	}
-	
-	
-	</style>
-	<script type="text/javascript">
-			//<![CDATA[
-			//* debug bits *//
-			
-			window.onerror=function(msg, url, linenumber){
-				console.error("[%s]\t %s\n\t\t\t\t\t\t\t  Url: %s\n\t\t\t\t\t\t\t  Line Number: %s",
-				new Date().toISOString(),
-				msg,
-				url,
-				linenumber);
-			return true;} 
-			//]]>
-	</script>
-	<script>
-//<![CDATA[
-/* Polyfills */
-// What is a Polyfill? https://www.google.com/search?q=define+polyfill
+<script src="./scripts/js/err-formatter.js" type="text/javascript"></script>
+<script src="./scripts/js/polyfills.js" type="text/javascript"></script>
 
-"use strict";
-
-
-console.group("Loading Polyfills");
-console.timeStamp("Loading Polyfills");
-console.time("Loading Polyfills Time");
-var numPolyfillsLoaded =0;
-console.log("[%s]	Checking for necessary polyfills.", new Date().toISOString());
-
-
-/* Array.map() 
-	// "Creates a new array with the results of calling a provided function on every element in this array."
-	// Via: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map
-*/
-// Production steps of ECMA-262, Edition 5, 15.4.4.19
-// Reference: http://es5.github.com/#x15.4.4.19
-if (!Array.prototype.map) {
-  Array.prototype.map = function(callback, thisArg) {
-
-    var T, A, k;
-
-    if (this == null) {
-      throw new TypeError(" this is null or not defined");
-    }
-
-    // 1. Let O be the result of calling ToObject passing the |this| value as the argument.
-    var O = Object(this);
-
-    // 2. Let lenValue be the result of calling the Get internal method of O with the argument "length".
-    // 3. Let len be ToUint32(lenValue).
-    var len = O.length >>> 0;
-
-    // 4. If IsCallable(callback) is false, throw a TypeError exception.
-    // See: http://es5.github.com/#x9.11
-    if (typeof callback !== "function") {
-      throw new TypeError(callback + " is not a function");
-    }
-
-    // 5. If thisArg was supplied, let T be thisArg; else let T be undefined.
-    if (arguments.length > 1) {
-      T = thisArg;
-    }
-
-    // 6. Let A be a new array created as if by the expression new Array(len) where Array is
-    // the standard built-in constructor with that name and len is the value of len.
-    A = new Array(len);
-
-    // 7. Let k be 0
-    k = 0;
-
-    // 8. Repeat, while k < len
-    while(k < len) {
-
-      var kValue, mappedValue;
-
-      // a. Let Pk be ToString(k).
-      //   This is implicit for LHS operands of the in operator
-      // b. Let kPresent be the result of calling the HasProperty internal method of O with argument Pk.
-      //   This step can be combined with c
-      // c. If kPresent is true, then
-      if (k in O) {
-
-        // i. Let kValue be the result of calling the Get internal method of O with argument Pk.
-        kValue = O[ k ];
-
-        // ii. Let mappedValue be the result of calling the Call internal method of callback
-        // with T as the this value and argument list containing kValue, k, and O.
-        mappedValue = callback.call(T, kValue, k, O);
-
-        // iii. Call the DefineOwnProperty internal method of A with arguments
-        // Pk, Property Descriptor {Value: mappedValue, : true, Enumerable: true, Configurable: true},
-        // and false.
-
-        // In browsers that support Object.defineProperty, use the following:
-        // Object.defineProperty(A, Pk, { value: mappedValue, writable: true, enumerable: true, configurable: true });
-
-        // For best browser support, use the following:
-        A[ k ] = mappedValue;
-      }
-      // d. Increase k by 1.
-      k++;
-    }
-	
-    // 9. return A
-    return A;
-  };      
-}
-
-/* Array.filter() 
-	// "Creates a new array with all elements that pass the test implemented by the provided function."
-	// Via: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter
-*/
-
-if (!Array.prototype.filter)
-{
-  Array.prototype.filter = function(fun /*, thisp */)
-  {
-    "use strict";
-
-    if (this == null)
-      throw new TypeError();
-
-    var t = Object(this);
-    var len = t.length >>> 0;
-    if (typeof fun != "function")
-      throw new TypeError();
-
-    var res = [];
-    var thisp = arguments[1];
-    for (var i = 0; i < len; i++)
-    {
-      if (i in t)
-      {
-        var val = t[i]; // in case fun mutates this
-        if (fun.call(thisp, val, i, t))
-          res.push(val);
-      }
-    }
-
-    return res;
-  };
-}
-
-
-/* Date.now() 
-	// "The Date.now() method returns the number of milliseconds elapsed since 1 January 1970 00:00:00 UTC."
-	// Via: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now
-*/
-if (!Date.now) {
-	console.log("[%s]	Date.now() polyfill loaded.", new Date().toISOString());
-	Date.now = function now() {
-		return new Date().getTime();
-	};
-	numPolyfillsLoaded++;
-}
-
-/* Date.toISOString()
-	// The toISOString() method returns a string in ISO format (ISO 8601 Extended Format), which can be described as follows: YYYY-MM-DDTHH:mm:ss.sssZ. 
-	// The timezone is always UTC as denoted by the suffix "Z".
-	// Via: http://stackoverflow.com/a/8563517
-*/
-if ( !Date.prototype.toISOString ) {
-	console.log("[%s]	dateObj.toISOString polyfill loaded.", new Date().toISOString());
-	( function() {
-		
-		function pad(number) {
-			if ( number < 10 ) {
-				return '0' + number;
-			}
-			return number;
-		}
-		
-		Date.prototype.toISOString = function() {
-			return this.getUTCFullYear() +
-			'-' + pad( this.getUTCMonth() + 1 ) +
-			'-' + pad( this.getUTCDate() ) +
-			'T' + pad( this.getUTCHours() ) +
-			':' + pad( this.getUTCMinutes() ) +
-			':' + pad( this.getUTCSeconds() ) +
-			'.' + (this.getUTCMilliseconds() / 1000).toFixed(3).slice( 2, 5 ) +
-			'Z';
-		};
-		numPolyfillsLoaded++;
-	}() );
-}
-
-		
-/* requestAnimationFrame()
-	// used to allow the browswer to ratelimit at ~60fps
-	// Via: http://www.paulirish.com/2011/requestanimationframe-for-smart-animating/
-	// modified to count polyfill loading
-*/
-(function() {
-	var lastTime = 0;
-	var vendors = ['webkit', 'moz'];
-	for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
-		window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
-		window.cancelAnimationFrame =
-		window[vendors[x]+'CancelAnimationFrame'] || window[vendors[x]+'CancelRequestAnimationFrame'];
-	}
-	
-	if (!window.requestAnimationFrame) {
-		window.requestAnimationFrame = function(callback, element) {
-			var currTime = new Date().getTime();
-			var timeToCall = Math.max(0, 16 - (currTime - lastTime));
-			var id = window.setTimeout(function() { callback(currTime + timeToCall); },
-			timeToCall);
-			lastTime = currTime + timeToCall;
-			
-			
-			return id;
-		};
-		numPolyfillsLoaded++;
-	}
-	
-	if (!window.cancelAnimationFrame) {
-		window.cancelAnimationFrame = function(id) {
-			clearTimeout(id);
-		};
-		numPolyfillsLoaded++;
-	}
-	
-}());
+<script src="./scripts/js/3rd_party/random_number_generator/alea.js" type="text/javascript"></script>
 
 
 
-
-console.log("[%s]	Polyfills loaded: %i", new Date().toISOString(),numPolyfillsLoaded);
-
-console.timeStamp("Loading Polyfills");
-console.timeEnd("Loading Polyfills Time");
-console.groupEnd(); // "Loading Polyfills"
-//]]>
-	</script>
-	<script>
-//<![CDATA[
-/* Fast random number generator with uint32 support*/
-// From http://baagoe.com/en/RandomMusings/javascript/
-// Johannes Baag√∏e <baagoe@baagoe.com>, 2010
-
-console.group("Loading Alea Random Number Generator");
-console.timeStamp("Loading Alea Random Number Generator");
-console.time("Loading Alea Random Number Generator Time");
-
-
-function Mash() {
-  var n = 0xefc8249d;
-
-  var mash = function(data) {
-    data = data.toString();
-    for (var i = 0; i < data.length; i++) {
-      n += data.charCodeAt(i);
-      var h = 0.02519603282416938 * n;
-      n = h >>> 0;
-      h -= n;
-      h *= n;
-      n = h >>> 0;
-      h -= n;
-      n += h * 0x100000000; // 2^32
-    }
-    return (n >>> 0) * 2.3283064365386963e-10; // 2^-32
-  };
-
-  mash.version = 'Mash 0.9';
-  return mash;
-}
-
-// From http://baagoe.com/en/RandomMusings/javascript/
-function Alea() {
-  return (function(args) {
-    // Johannes Baag√∏e <baagoe@baagoe.com>, 2010
-    var s0 = 0;
-    var s1 = 0;
-    var s2 = 0;
-    var c = 1;
-
-    if (args.length == 0) {
-      args = [+new Date()];
-    }
-    var mash = Mash();
-    s0 = mash(' ');
-    s1 = mash(' ');
-    s2 = mash(' ');
-
-    for (var i = 0; i < args.length; i++) {
-      s0 -= mash(args[i]);
-      if (s0 < 0) {
-        s0 += 1;
-      }
-      s1 -= mash(args[i]);
-      if (s1 < 0) {
-        s1 += 1;
-      }
-      s2 -= mash(args[i]);
-      if (s2 < 0) {
-        s2 += 1;
-      }
-    }
-    mash = null;
-
-    var random = function() {
-      var t = 2091639 * s0 + c * 2.3283064365386963e-10; // 2^-32
-      s0 = s1;
-      s1 = s2;
-      return s2 = t - (c = t | 0);
-    };
-    random.uint32 = function() {
-      return random() * 0x100000000; // 2^32
-    };
-    random.fract53 = function() {
-      return random() + 
-        (random() * 0x200000 | 0) * 1.1102230246251565e-16; // 2^-53
-    };
-    random.version = 'Alea 0.9';
-    random.args = args;
-    return random;
-
-  } (Array.prototype.slice.call(arguments)));
-};
-
-var random = Alea();
-console.log(random());
-console.log(random.uint32());
-
-console.timeStamp("Loading Alea Random Number Generator");
-console.timeEnd("Loading Alea Random Number Generator Time");
-console.groupEnd(); // "Loading Alea Random Number Generator"
-
-
-//]]>
-</script>
 </head>
 <body>
-<div>
-	<div id='left-controls'>
-		
-	</div>
-	<div id='right-controls'>
-		<div class="control-set">
-			Canvas Size:<hr/>
-			<button onclick="canvasSize(100,100)">Micro</button>
-			<button onclick="canvasSize(400,400)">Small</button>
-			<button onclick="canvasSize(800,800)">Medium</button><br/>
-			<button onclick="canvasSize(1900,900)">Large</button>
-			<button onclick="canvasSize(window.innerWidth-20,window.innerHeight-20)">Max</button>
-			<br/><br/>
-			<hr/>
-W:<input type="number" min="100" max="1920" size="4" step="20" name="height" value="400"/> x
-H:<input type="number" min="100" max="1200" size="4" step="20" name="width" value="400"/><br/><br/>
-<button onclick="canvasSize(document.getElementsByName('width')[0].value,document.getElementsByName('height')[0].value)">Set Custom</button>
+<div id="control-panel">
+	<details open><summary>Setup</summary>
+			<details open><summary>Canvas Size:</summary>
+				<div class="control-set">
+					<button onclick="canvasSize(100,100)">Micro</button>
+					<button onclick="canvasSize(400,400)">Small</button>
+					<button onclick="canvasSize(800,800)">Medium</button>
+					<button onclick="canvasSize(1900,900)">Large</button>
+					<button onclick="canvasSize(window.innerWidth-20,window.innerHeight-20)">Max</button>
+					<br/><br/>
+					<hr/>
+					H:<input type="number" min="100" max="1200" size="4" step="20" name="width" value="400"/> x
+					W:<input type="number" min="100" max="1920" size="4" step="20" name="height" value="400"/> <br/><br/>
+					<button onclick="canvasSize(document.getElementsByName('width')[0].value,document.getElementsByName('height')[0].value)">Set Custom</button>
+				</div>
+			</details>
+	</details>
+	
+	<details open><summary>Simulation</summary>
+			<details open><summary>Play</summary>
+				<div class="control-set">
+					<button onclick="gameStart()">Go</button>
+					<button onclick="gameStop()">Stop</button>
+				</div>
+			</details>
+			<details open><summary>Sim Speed</summary>
+				<div class="control-set">
+					<button onclick="setSimSpeed(1)">Slug</button>
+					<button onclick="setSimSpeed(5)">Inchworm</button>
+					<button onclick="setSimSpeed(10)">Ant</button>
+					<button onclick="setSimSpeed(20)">Centipede </button>
+					<button onclick="setSimSpeed(40)">Cockroach</button>
+					<button onclick="setSimSpeed(60)">Dragonfly</button>
+				</div>
+			</details>
+	</details>
+	
+	<details open><summary>Pallet</summary>
+		<p></p>
+		<details open><summary>Units</summary>
+			<div class="control-set">
+				Ant
+				Queen
+				Doodlebug
+			</div>
+		</details>
 
-		</div>
-		
+		<details open><summary>Terrain</summary>
+			<div class="control-set">
+				Empty
+				Dirt
+				Water
+				Plant
+			</div>
+		</details>
+		<details open><summary>Scents</summary>
+			<div class="control-set">
+				<details open><summary>Ant</summary>
+					<div class="control-set">
+						Hive
+						Forage
+						Food
+						Alarm
+					</div>
+				</details>
+				<details open><summary>Env.</summary>
+					<div class="control-set">
+						Water
+						Plant
+						Refuse
+						Dirt
+					</div>
+				</details>
+			</div>
+		</details>
+	</details>
+
+	
+	<details open><summary>Misc / uncategorized</summary>
 		<div class="control-set">
-			Random<hr/>
-			<button onclick="reroll()">reroll!</button> <br/>
+			<button onclick="reroll()">reroll!</button>
 		</div>
-		
+	</details>
+	
+	<details open><summary>Statistics</summary>
 		<div class="control-set">
-			Play!<hr/>
-			<button onclick="gameStart()">Go</button> <br/>
-			<button onclick="gameStop()">Stop</button> <br/>
+			W:&nbsp;<span id="canvasWidth"></span> x H:&nbsp;<span id="canvasHeight"></span><br/>
+			px:&nbsp;<span id="canvasPixelCount"></span><br/><br/>
+			FRAME:&nbsp;<span id="frameDisplay">[frame]</span><br/>
+			FPS:&nbsp;<span id="framerateDisplay">[framerate]</span><br/>
+			SPF:&nbsp;<span id="frametimeDisplay">[frametime]</span>ms<br/><br/>
+			TICK:&nbsp;<span id="tickDisplay">[generation]</span><br/>
+			TPS:&nbsp;<span id="tickrateDisplay">[tickrate]</span><br/>
+			SPT:&nbsp;<span id="ticktimeDisplay">[ticktime]</span>ms<br/>
 		</div>
-		<hr/>
-		<div class="control-set">
-		<br/><hr/><br/>
-		W:&nbsp;<span id="canvasWidth"></span> x H:&nbsp;<span id="canvasHeight"></span><br/>
-		px:&nbsp;<span id="canvasPixelCount"></span><br/><br/>
-		TICK:&nbsp;<span id="tickDisplay">[generation]</span><br/>
-		FPS:&nbsp;<span id="framerateDisplay">[framerate]</span><br/>
-		SPF:&nbsp;<span id="frametimeDisplay">[frametime]</span>ms
-		</div>
-	</div>
+	</details>	
 </div>
-
 
 <h1>Pixel Ant Colony v1.0</h1>
 <canvas id="gameworld" width="800" height="300"></canvas>
 
-
-
-<script>
-//<![CDATA[
-
-// All this code is bad. It is a prototype and meant implement a proof on of concept.
-
-var widthElem = document.getElementById('canvasWidth');
-var heightElem = document.getElementById('canvasHeight');
-var pixelCountDisplay =  document.getElementById('canvasPixelCount');
-var canvas = document.getElementById('gameworld');
-var context = canvas.getContext('2d');
-var canvasWidth  = canvas.width;
-var canvasHeight = canvas.height;
-var ctx = canvas.getContext('2d');
-var imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
-	
-var buf = new ArrayBuffer(imageData.data.length);	// a liniar arraybuffer that stores the color data for the image.
-var buf8 = new Uint8ClampedArray(buf); 				// used to index into the bufer via 8bit ord
-var data = new Uint32Array(buf);					// used to index into the buffer via a 32 bit ord
-
-function render() {
-	pixelGen();
-	pushToCanvas();
-}
-
-function canvasSize(width,height) {
-	
-	console.log("setting canvas w:"+width+" h:"+height);
-	
-	// ajust canvas sizes
-	canvas.width=width;
-	canvas.height=height;
-	canvas.style.width  = width+'px';
-	canvas.style.height = height+'px';
-	
-	// ajust buffers 	
-	canvasWidth  = canvas.width;
-	canvasHeight = canvas.height;
-	imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
-	
-	buf = new ArrayBuffer(imageData.data.length);
-	buf8 = new Uint8ClampedArray(buf);
-	data = new Uint32Array(buf);
-	
-	
-	//display it
-	widthElem.textContent	=	canvas.width;
-	heightElem.textContent	=	canvas.height;
-	pixelCountDisplay.textContent	=	canvas.width*canvas.height;
-	
-	render();
-}
-
-// Determine whether Uint32 is little- or big-endian.
-data[1] = 0x0a0b0c0d;
-	
-function endiannessCheck() {
-	var isLittleEndian = true;
-	if (buf[4] === 0x0a && buf[5] === 0x0b && buf[6] === 0x0c &&
-		buf[7] === 0x0d) {
-		isLittleEndian = false;
-	}
-	return isLittleEndian;
-}
-
-var pixelGen = function () {
-	// highspeed rendering method based on 
-	// https://hacks.mozilla.org/2011/12/faster-canvas-pixel-manipulation-with-typed-arrays/
-	console.log("choosing endianness");
-	// first time in this function, we decide what call to really run
-	if (endiannessCheck()) {
-		console.log("setting to little endian");
-		pixelGen = lePixelGen;
-	} else {
-		console.lgo("setting to beg endian");
-		pixelGen = bePixelGen;
-	}
-	
-	// now we call the real function
-	pixelGen();
-};
-
-
-
-function lePixelGen() {
-	//console.log("Generate (little endianness)");
-	for (var y = 0; y < canvasHeight; ++y) {
-		for (var x = 0; x < canvasWidth; ++x) {
-			var value = x * y & 0xff;
-			
-			data[y * canvasWidth + x] = random.uint32()
-			
-			/*
-				(255   << 24) |    // alpha
-				(value << 16) |    // blue
-				(value <<  8) |    // green
-				 value;            // red
-			*/
-		}
-	}
-	
-}
-
-function bePixelGen() {
-	//console.log("Generate (big endianness)");
-	for (y = 0; y < canvasHeight; ++y) {
-		for (x = 0; x < canvasWidth; ++x) {
-			value = x * y & 0xff;
-
-			data[y * canvasWidth + x] = random.uint32()
-			
-			/*
-				(value << 24) |    // red
-				(value << 16) |    // green
-				(value <<  8) |    // blue
-				 255;              // alpha
-			*/
-		}
-	}
-}
-
-function pushToCanvas() {
-	//console.log("Drawing");
-	imageData.data.set(buf8);
-	ctx.putImageData(imageData, 0, 0);
-}
-
-function tick() {
-	pixelGen();
-}
-
-
-function reroll() {
-	pixelGen();
-	pushToCanvas();
-}
-
-var start = false;
-var running = false;
-var frameCount = 0;
-
-
-function gameStart() {
-	start = true;
-	
-	if(!running) {
-		console.group("Game Running");
-		console.timeStamp("Game Running");
-		console.time("Game Running");
-	
-		gameLoop(0);
-	}
-}
-
-function gameStop() {
-	
-	start = false;
-	if(running) {
-		console.timeStamp("Game Stoppped");
-		console.timeEnd("Game Running");
-		console.groupEnd(); // "Game Running"
-	}
-}
-
-
-var tickDisplay = document.getElementById('tickDisplay');
-var framerateDisplay = document.getElementById('framerateDisplay');
-var frametimeDisplay = document.getElementById('frametimeDisplay');
-
-// fps calc from https://stackoverflow.com/questions/5078913/html5-canvas-performance-calculating-loops-frames-per-second
-var fps = 0,frametime=0, now, lastUpdate = (new Date)*1 - 1;
-// The higher this value, the less the FPS will be affected by quick changes
-// Setting this to 1 will show you the FPS of the last sampled frame only
-var fpsFilter = 5;
-var fpsUpdateInterval = 1000; // how often to update he displays, in ms
-
-function gameLoop(time) {
-
-	tick();
-
-	pushToCanvas();
-
-	frameCount++;
-	
-	frametime = ((now=new Date) - lastUpdate)
-	var thisFrameFPS = 1000 / frametime;
-	fps += (thisFrameFPS - fps) / fpsFilter;
-	lastUpdate = now * 1 - 1;
-	
-	
-	if(start){
-		running = true;
-		window.requestAnimationFrame(gameLoop);
-	}
-	else {
-		running = false;
-		// game is not running
-	}
-	
-	console.timeEnd("gameLoop()");
-}
-
-
-//this periodically updates the displays
-// should be rewritten to store in a timer management system so that I can set and clear it easier
-setInterval(function(){
-tickDisplay.innerHTML = frameCount;
-	framerateDisplay.innerHTML = fps.toFixed(2) + "fps";
-	if(running) console.log("fps: "+fps.toFixed(2)+"\tticks: "+frameCount);
-}, fpsUpdateInterval);
-setInterval(function(){
-	tickDisplay.innerHTML = frameCount;
-}, fpsUpdateInterval/10);
-	setInterval(function(){
-	frametimeDisplay.innerHTML = frametime;
-}, fpsUpdateInterval/10);
-	
-//]]>
-</script>
-
-
-<script>
-//<![CDATA[
-console.group("Game Setup");
-console.timeStamp("Game Setup");
-console.time("Game Setup");
-
-canvasSize(400,400);
-
-console.timeStamp("Game Setup Ended");
-console.timeEnd("Game Setup");
-console.groupEnd(); // "Game Setup"
-	
-
-	
-
-
-//]]>
-</script>
-
+<script src="./scripts/js/antgame.js" type="text/javascript"></script>
 
 </body>
-
 </html>
