@@ -1,6 +1,7 @@
 //<![CDATA[
 
 // All this code is bad. It is a prototype and meant implement a proof on of concept.
+// Code revision will occur after each milestone.
 
 var widthElem = document.getElementById('canvasWidth');
 var heightElem = document.getElementById('canvasHeight');
@@ -39,6 +40,7 @@ function canvasSize(width,height) {
 	buf = new ArrayBuffer(imageData.data.length);
 	buf8 = new Uint8ClampedArray(buf);
 	data = new Uint32Array(buf);
+	pixelGen();
 
 	//display it
 	widthElem.textContent	=	canvas.width;
@@ -198,6 +200,13 @@ function gameLoop(time) {
 	frameCount++;
 	frameTime = (now - lastFrameUpdate);
 	lastFrameUpdate = now * 1 - 1;
+	
+	
+	/*
+		psudo code for elapsed time vs frames - fixing timestep
+		time elapsed += frame time
+		while timeelapsed > timepertick, tick() && timeelapsed-=timepertick
+	*/
 	
 	tickAccum++;
 	if(tickAccum >= (60-simSpeed)) {
