@@ -32,10 +32,12 @@ function Map( width, height, numLayers ) {
 		console.log(this.layer[i]);
 	}
 	
-	console.log("attempting to compact");
-	console.log(this.compositLayer);
+	//console.log("attempting to compact");
+	//var compositLayerString = this.compositLayer.toString();
+	//console.log(compositLayerString);
 	this.compact();
-	console.log(this.compositLayer);
+	//var compositLayerString2 = this.compositLayer.toString();
+	//console.log(compositLayerString2);
 
 }
 
@@ -49,7 +51,7 @@ look to see if there is something there.
 If it is a 0, skip, otherwise, put the value in the return array.
 	*/
 	
-	var valuebuffer = 0;
+	var valueAtPosition = 0;
 	
 	// for ever position in the map
 	for(var position = 0; position < this.width*this.height; position++){
@@ -111,10 +113,24 @@ Layer.prototype.setDataAtIndex = function(index,dataval) {
 	this.data[index] = dataval & 0xf;
 }
 
+Layer.prototype.toString = function() {
+	var stringifiedArray = "";
+	
+	for (var y = 0; y < this.height; ++y) {
+		for (var x = 0; x < this.width; ++x) {
+			stringifiedArray += this.getDataAtCoord(x,y);
+			stringifiedArray += ",";
+		}
+		stringifiedArray += "\n";
+	}
+	
+	return stringifiedArray;
+}
+
 Layer.prototype.randomizeTest = function () {
 	for (var y = 0; y < this.height; ++y) {
 		for (var x = 0; x < this.width; ++x) {
-			this.data[y * this.width + x] = random.uint32() & 0xf;
+			this.setDataAtCoord(x,y,random.uint32() & 0xf);
 		}
 	}
 	console.log("randomized layer");
