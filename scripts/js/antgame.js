@@ -17,14 +17,30 @@ var buf = new ArrayBuffer(imageData.data.length);	// a liniar arraybuffer that s
 var buf8 = new Uint8ClampedArray(buf); 				// used to index into the bufer via 8bit ord
 var data = new Uint32Array(buf);					// used to index into the buffer via a 32 bit ord
 
+
+var theWorld = null;
+var numLayers = 2; // temporary to implement depth buffer
+
+
+
 function render() {
 
 	pushToCanvas();
 }
 
 function canvasSize(width,height) {
-	
+
 	console.log("setting canvas w:"+width+" h:"+height);
+
+console.group("Creating Map");
+console.timeStamp("Creating Map");
+console.time("Creating Map");
+
+	theWorld = new Map(width,height,numLayers);
+
+console.timeStamp("Creating Map");
+console.timeEnd("Creating Map");
+console.groupEnd(); // "Creating Map"
 	
 	// ajust canvas sizes
 	canvas.width=width;
@@ -277,7 +293,7 @@ console.timeStamp("Game Setup");
 console.time("Game Setup");
 
 
-canvasSize(400,400);
+canvasSize(2,2);
 pixelGen();
 
 console.timeStamp("Game Setup Ended");
