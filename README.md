@@ -40,7 +40,7 @@ Pre-implementation. The architecture is defined, the technology stack is chosen,
 - **2010** — Initial Antillean design notes (gameplay vision, multi-scale gameplay loop, scent/feelings/communication systems)
 - **2012** — Cow behavior system, entity action modeling
 - **2013** — Collaborative diffusion research
-- **2014** — PixelAntColony implementation in Scala.js, the auto-profiling/adaptive-dispatch infrastructure, the first emergent pheromone trails
+- **2014/2015** — PixelAntColony implementation, eventually using Scala.js, the auto-profiling/adaptive-dispatch infrastructure, the first emergent pheromone trails
 - **2015-2025** — Continued research, three Are.na channels of accumulated reference material, the recognition that pheromone stigmergy is computation
 - **2026** — This document. The reboot starts now.
 
