@@ -1,0 +1,388 @@
+# Bootstrap Sub-Game Curriculum
+# ------------------------------------------------------------------------------
+# A worked-example SEED: an ordered ladder of small, throwaway mini-games and
+# capability spikes that (a) harden the agent-coordination substrate and (b)
+# de-risk each subsystem of the target sim, BEFORE the real thing is attempted.
+#
+# Companion to building-a-game-with-an-agent-swarm.md ("Building a Game with an Agent Swarm") — especially Part VI
+# (Bootstrapping: The Coordination Game). Each sub-game here is a "tiny target"
+# from VI.4; the climb is mechanics -> patterns -> real target.
+#
+# IMPORTANT — this is a seed, not the authoritative decomposition. Producing and
+# refining this list is the orchestrator's own job (the Architect / research loop
+# of Part IV–V). Treat every rung as a hypothesis to validate, split, reorder, or
+# cut. This file exists so the agent refines a worked example rather than starting
+# from a blank page.
+
+meta:
+  target: "A WebGPU cellular-automaton ant-colony sim (the example payload; the infra is spec-agnostic)."
+  principle: >
+    You cannot one-shot the whole project — but you can one-shot small things and
+    compose them into the large thing. Every rung is independently shippable,
+    exercises a specific system or feature, and leaves behind EITHER a reusable
+    component OR (more importantly) a hardened coordination artifact: a prompt, an
+    acceptance-criteria phrasing, a profile description, a skill.
+
+  each_subgame_is:
+    - "A WorkGraph in miniature (its own decompose -> build -> review -> synthesize)."
+    - "Its own small design/research loop: it produces a short spec-doc of its own
+       BEFORE code — the same shape as the full architecture spec, scoped to one piece.
+       The bits and pieces, assembled, are what the final architecture doc describes."
+    - "A throwaway: the game is the level, the honed substrate is what you keep (VI.2)."
+
+  kinds: [coordination, gameplay, simulation, behavior, ui, capability, performance]
+
+  acceptance_philosophy: >
+    Prefer MACHINE-CHECKABLE 'done_when' (a snapshot hash, 'no NaN over N ticks',
+    'reaching the exit prints WIN') so the goal-judge / reviewer has something concrete.
+    Vague criteria are the #1 source of QA thrash (VI.2). A 'done_when' a Tester card
+    can verify by running code beats one a model has to judge by eye.
+
+  how_to_run_a_rung: >
+    Each rung maps onto a `hermes kanban swarm` (workers -> verifier -> synthesizer)
+    or a decomposed triage card. Early rungs use goal-mode with the one-liner as the
+    acceptance body. Keep the early ones in a regression set (VI.5) and re-run them as
+    you change prompts/skills — they are your unit tests for natural-language coordination.
+
+  graduation_gate: >
+    Point the swarm at the REAL target only once the substrate is trustworthy on the
+    toys — e.g. N consecutive clean runs across the T0–T3 regression set, QA converging
+    inside budget, decomposition routing accurate, near-zero protocol violations.
+
+  reading:
+    - "Part III — WorkGraph (each rung is one)."
+    - "Part IV — dispatch (which backend/profile each card lands on)."
+    - "Part V — Hermes grounding (swarm, goal-mode, profiles, telemetry)."
+    - "Part VI — why this ladder exists at all."
+
+# ------------------------------------------------------------------------------
+# THE LADDER
+# ------------------------------------------------------------------------------
+tiers:
+
+  # ----------------------------------------------------------------------------
+  - id: T0
+    name: "Coordination shakeout — the game barely matters"
+    goal: >
+      Exercise the swarm machinery on targets so trivial that ANY failure observed
+      is a coordination failure, never a domain one. You are debugging the system,
+      not the game.
+    coordination_focus: >
+      Does a card complete the full lifecycle and call kanban_complete? Does a 2–3
+      task fan-out + integrate run clean? Does the goal-judge converge on a behavioral
+      criterion? Watch for protocol_violation / gave_up here above all.
+    subgames:
+
+      - id: SG-0.1
+        title: "ASCII face on a grid"
+        kind: [coordination, gameplay]
+        build: "Render a ':)' at a fixed cell in a bounded console grid; print one frame."
+        proves: ["one builder -> reviewer -> done cycle runs end-to-end", "console frame render"]
+        depends_on: []
+        done_when: "grid prints with the face at the expected (row,col)."
+        de_risks: "the absolute-minimum coordination path; nothing domain-specific yet."
+        loop: "Trivial — but still write the 3-line mini-spec, to form the loop's muscle memory."
+
+      - id: SG-0.2
+        title: "Move the face (keyboard input)"
+        kind: [coordination, gameplay]
+        build: "WASD moves the ':)' around the bounded grid; ignore moves past the edge."
+        proves: ["input handling", "a state-update + render loop", "2-task fan-out (input | render) -> integrate"]
+        depends_on: [SG-0.1]
+        done_when: "scripted input sequence ends with the face at the predicted cell; edges block."
+        de_risks: "the core gameplay loop primitive (read input -> mutate state -> render)."
+        loop: "Spec the tick order (input before render?) — the first place an ambiguous handoff bites."
+
+      - id: SG-0.3
+        title: "Smiley in a maze"  # the explicit first step
+        kind: [coordination, gameplay, simulation]
+        build: "Static ASCII maze; the ':)' cannot move through '#' walls."
+        proves: ["collision against a grid (the CA grid primitive)", "parallel fan-out: maze-gen | movement | collision"]
+        depends_on: [SG-0.2]
+        done_when: "an input path that hits a wall leaves the face stationary; a clear path moves it."
+        de_risks: "grid-as-world + per-cell rules — the substrate the whole sim is built on."
+        loop: "Decide the grid representation now; it propagates everywhere. First multi-worker parallel rung."
+
+      - id: SG-0.4
+        title: "Maze with a goal + win state"
+        kind: [coordination, gameplay]
+        build: "Place an exit; reaching it prints WIN and ends; add a step counter."
+        proves: ["a full gameplay loop (state machine, win/lose)", "goal-mode judge on a behavioral criterion"]
+        depends_on: [SG-0.3]
+        done_when: "reaching the exit prints WIN exactly once and halts; step count correct."
+        de_risks: "high-level game-flow / FSM (the 'Gameplay Foundations' layer, in miniature)."
+        loop: "Write the acceptance as the goal-mode body verbatim — this rung tunes how you phrase criteria."
+
+  # ----------------------------------------------------------------------------
+  - id: T1
+    name: "Simulation primitives in the console (still ASCII)"
+    goal: >
+      Prove the cellular-automaton grid and the pheromone-FIELD lifecycle on CPU/ASCII,
+      where they are cheap to inspect, before any GPU is involved. This tier alone
+      retires most of the sim's conceptual risk.
+    coordination_focus: >
+      Sim cards need machine-checkable acceptance (grid hash, value at cell after N
+      ticks). This tier is where you build the Tester-probe habit that makes later
+      GPU QA loops possible.
+    subgames:
+
+      - id: SG-1.1
+        title: "Conway's Game of Life (console)"
+        kind: [simulation]
+        build: "Classic CA on the grid; double-buffered tick; render live cells in ASCII."
+        proves: ["the grid-tick / double-buffer pattern", "neighbor reads", "fixed-engine / changing-rules data split"]
+        depends_on: [SG-0.3]
+        done_when: "a glider returns to its shape, shifted, after its period (exact cell check)."
+        de_risks: "the core CA engine loop — the beating heart of the sim."
+        loop: "Spec the double-buffer contract; an in-place mutation bug here is the canonical CA mistake."
+
+      - id: SG-1.2
+        title: "Scalar diffusion field (console)"
+        kind: [simulation]
+        build: "A float field diffuses across the grid (blur / heat-equation); render intensity as '. : # @'."
+        proves: ["diffusion (the pheromone-diffusion primitive) on CPU", "intensity rendering"]
+        depends_on: [SG-1.1]
+        done_when: "total mass conserved (within tol) absent sources; a point spike spreads symmetrically."
+        de_risks: "the diffusion half of the pheromone fluid sim."
+        loop: "Pick the stencil + boundary handling; document why — feeds the GPU port later."
+
+      - id: SG-1.3
+        title: "Scent field: diffuse + decay + source"
+        kind: [simulation, gameplay]
+        build: "A keypress drops 'scent' that diffuses AND decays over ticks; watch it bloom and fade."
+        proves: ["the full scent lifecycle: source -> diffuse -> decay", "this is the target's M1 logic, minus advection, minus GPU"]
+        depends_on: [SG-1.2]
+        done_when: "with no new sources, peak intensity decays monotonically to ~0 by an expected tick."
+        de_risks: "the entire pheromone-field model on CPU — the single biggest M1 de-risk."
+        loop: "This rung's mini-spec is basically a draft of the real fluid-sim section. Keep it; it graduates upward."
+
+      - id: SG-1.4
+        title: "One ant follows a gradient"
+        kind: [simulation, behavior]
+        build: "A single agent greedily climbs the scent gradient toward the source."
+        proves: ["gradient-following = collaborative-diffusion pathfinding primitive", "agent <-> field coupling"]
+        depends_on: [SG-1.3]
+        done_when: "from a random start, the agent reaches the source cell within a bounded step budget."
+        de_risks: "pathfinding-via-field — the 'no explicit A*' bet."
+        loop: "Decide tie-breaking on equal-gradient neighbors; ambiguity here causes jitter — spec it."
+
+  # ----------------------------------------------------------------------------
+  - id: T2
+    name: "Behavior & many agents (CPU / ASCII)"
+    goal: "Prove utility-based action selection and emergent multi-agent behavior at small N."
+    coordination_focus: >
+      Emergence makes 'correct' fuzzy — lean hard on objective acceptance (e.g. 'a trail
+      forms between nest and food within N ticks, measured by field intensity along the path').
+    subgames:
+
+      - id: SG-2.1
+        title: "IAUS toy (one agent, competing drives)"
+        kind: [behavior, capability]
+        build: "One agent scores 2–3 drives (seek-food / avoid-wall / wander) via IAUS each tick, acts on the max."
+        proves: ["the IAUS scorer: geometric mean + veto axes", "SAME scorer reused by the dispatcher (Part IV)"]
+        depends_on: [SG-1.4]
+        done_when: "with food present the agent reliably seeks it; a zero-veto axis (wall) is never overridden."
+        de_risks: "the behavior model AND, by reuse, the dispatch scorer — one rung retires two bets."
+        loop: "Spec the axes + response curves; this artifact is reusable verbatim for backend scoring."
+
+      - id: SG-2.2
+        title: "Many ants + stigmergy"
+        kind: [simulation, behavior]
+        build: "N agents lay pheromone and follow it; watch trails self-organize between two points in ASCII."
+        proves: ["multi-agent stigmergy — the emergent behavior the sim is ABOUT, at small N on CPU"]
+        depends_on: [SG-2.1]
+        done_when: "a persistent trail forms between nest and food (field intensity along path exceeds threshold)."
+        de_risks: "the actual point of the whole sim, proven cheaply before scaling."
+        loop: "This is where 'simple rules -> surprising global behavior' is first observed; document the rule set."
+
+      - id: SG-2.3
+        title: "Cell reservation (dibs) for agents"
+        kind: [simulation, coordination]
+        build: "Agents reserve a target cell before moving so two never stack on one cell."
+        proves: ["temporal reservation ('dibs') — the SAME primitive as dispatch backend-capacity (Part IV)"]
+        depends_on: [SG-2.2]
+        done_when: "over a long run, no two agents ever occupy the same cell (assertion holds every tick)."
+        de_risks: "agent contention; and again the dispatch capacity model, by analogy."
+        loop: "Spec the claim/release protocol; a leak here = stuck agents (mirrors a stuck dispatch lock)."
+
+  # ----------------------------------------------------------------------------
+  - id: T3
+    name: "Capability verification (spikes, not games)"
+    goal: >
+      Verify we can actually do the cross-cutting things we're betting on. These are
+      throwaway probes that answer 'is this possible / good enough?' and produce a
+      yes/no + a tiny how. They can run in PARALLEL with T1–T2 once a sim exists to probe.
+    coordination_focus: "Spikes are 'researcher' work — short, web/code-exec enabled, verdict-producing. Good test of the research-delegation path."
+    subgames:
+
+      - id: SG-3.1
+        title: "Profiling / instrumentation spike (AOP profiling system)"
+        kind: [capability, performance]
+        build: "Wrap the sim tick with the AOP/aspect profiling hooks; capture per-phase timings (diffuse/decay/behavior) without editing the sim body."
+        proves: ["aspect/hook-based profiling captures usable per-phase telemetry non-invasively"]
+        depends_on: [SG-1.3]
+        done_when: "a run emits a per-phase timing breakdown; the sim code itself is unchanged by the instrumentation."
+        de_risks: "the profiling subsystem the project is explicitly counting on."
+        loop: "Verdict-style mini-report: does the AOP approach work here, what's the overhead, what's the seam? Promote-or-drop."
+
+      - id: SG-3.2
+        title: "Data-driven config spike"
+        kind: [capability]
+        build: "Move ALL sim parameters (diffusion rate, decay, agent count, IAUS weights) into an external table; hot-swap with no code change."
+        proves: ["the 'engine never changes, only data' architecture claim is real for this engine"]
+        depends_on: [SG-2.1]
+        done_when: "two different parameter files produce two visibly different runs from the SAME binary."
+        de_risks: "the data-driven design premise the whole architecture rests on."
+        loop: "Spec the schema; this table format is itself a small architecture-doc artifact."
+
+      - id: SG-3.3
+        title: "Determinism / seeded RNG spike"
+        kind: [capability]
+        build: "Seed all randomness so the same seed -> the same sim trajectory."
+        proves: ["reproducibility — the precondition for writing regression tests on a stochastic sim"]
+        depends_on: [SG-2.2]
+        done_when: "same seed -> identical grid hash at tick N across two runs; different seed -> different hash."
+        de_risks: "testability of everything stochastic (without it, sim QA loops can't have stable acceptance)."
+        loop: "Decide the RNG ownership/threading model; non-determinism leaks are subtle — document the contract."
+
+      - id: SG-3.4
+        title: "Headless run + snapshot/hash spike"
+        kind: [capability]
+        build: "Run the sim with no renderer; dump a grid snapshot (and a hash) at an arbitrary tick."
+        proves: ["machine-checkable acceptance for ALL later sim cards — the Tester-probe foundation"]
+        depends_on: [SG-3.3]
+        done_when: "`run --headless --until 1000 --dump` produces a stable hash and a NaN/Inf check passes."
+        de_risks: "the QA-loop acceptance mechanism for every GPU sim rung that follows (Part IV/VI)."
+        loop: "This rung unblocks objective 'done_when' for T5; prioritize it. Its output IS a reusable test harness."
+
+  # ----------------------------------------------------------------------------
+  - id: T4
+    name: "UI / rendering migration (console -> HTML canvas)"
+    goal: "Climb off ASCII toward the real canvas, proving the sim core is renderer-agnostic by swapping the renderer under it."
+    coordination_focus: "First rungs that need the frontend skill + browser-capable verification; tests UI-task routing and visual acceptance (hard to machine-check — lean on structural assertions + reviewer)."
+    subgames:
+
+      - id: SG-4.1
+        title: "Scent field on a 2D canvas"
+        kind: [ui, simulation]
+        build: "Port SG-1.3's field from ASCII to an HTML <canvas> heatmap; sim core untouched."
+        proves: ["sim/render separation: same engine, new renderer", "the canvas render path"]
+        depends_on: [SG-1.3, SG-3.2]
+        done_when: "canvas heatmap matches the ASCII field's behavior; sim module diff is render-only."
+        de_risks: "the rendering abstraction boundary — that the sim doesn't secretly depend on its renderer."
+        loop: "Spec the sim<->renderer interface; getting this seam right is what lets GPU slot in at T5."
+
+      - id: SG-4.2
+        title: "Interactive canvas controls"
+        kind: [ui, gameplay]
+        build: "Sliders for diffusion/decay, click-to-spray on the canvas, play/pause/step."
+        proves: ["the parameter-tweaking UI + the front-end controls layer"]
+        depends_on: [SG-4.1]
+        done_when: "moving a slider changes the live field; click injects scent at the cursor cell; pause halts ticks."
+        de_risks: "the HUD / controls (the 'Front End' layer, in miniature)."
+        loop: "Bind controls to the SG-3.2 config table, not ad-hoc state — keeps the data-driven contract intact."
+
+      - id: SG-4.3
+        title: "Ants + trails on canvas"
+        kind: [ui, simulation, behavior]
+        build: "Render the T2 stigmergy sim on canvas with the SG-4.2 controls."
+        proves: ["full CPU sim + real UI, integrated"]
+        depends_on: [SG-4.2, SG-2.3]
+        done_when: "trails visibly form and respond to slider changes in real time at small N."
+        de_risks: "end-to-end CPU vertical slice — the last checkpoint before the GPU bet."
+        loop: "This is a mini 'M1–M3 on CPU'. Its spec is a near-complete draft of the real thing's UI+sim sections."
+
+  # ----------------------------------------------------------------------------
+  - id: T5
+    name: "GPU migration (WebGPU — the performance bet)"
+    goal: "Prove the real compute path: WGSL compute passes, GPU fields, stable fluids, scale. Acceptance leans on the SG-3.4 headless hash/NaN harness."
+    coordination_focus: "Highest-skill builder cards (WGSL + numerical methods) AND the first cards that split write-code (model, cloud OK) from run-code (needs the GPU terminal backend — Part V.5)."
+    subgames:
+
+      - id: SG-5.1
+        title: "WebGPU 'hello compute'"
+        kind: [capability, ui]
+        build: "A compute shader writes a gradient into a texture; render the texture to canvas."
+        proves: ["WebGPU device / pipeline / bind-group plumbing works at all (the target's M1 device-setup)"]
+        depends_on: [SG-4.1]
+        done_when: "the rendered texture shows the expected gradient; no device-lost / validation errors."
+        de_risks: "the entire WebGPU plumbing assumption — does the stack even initialize on the target hardware?"
+        loop: "Spike-flavored: confirm the GPU terminal backend (Part V.5) can run/verify this. Verdict + how."
+
+      - id: SG-5.2
+        title: "Scent field on GPU (diffuse + decay)"
+        kind: [simulation, performance]
+        build: "Re-implement SG-1.3 as WGSL compute passes (diffusion via Jacobi, per-tick decay); render."
+        proves: ["the CPU field ported to GPU — the target's M1 proper"]
+        depends_on: [SG-5.1, SG-3.4]
+        done_when: "GPU field's headless hash tracks the CPU reference (within tol); no NaN over 1000 ticks."
+        de_risks: "GPU field correctness — that the port preserves the CPU semantics."
+        loop: "Reuse the SG-1.2 stencil spec; the mini-loop here is mostly 'CPU result == GPU result' verification."
+
+      - id: SG-5.3
+        title: "Navier–Stokes advection on GPU"
+        kind: [simulation, performance]
+        build: "Add the advection pass (Stam stable-fluids, backward bilinear); full advect -> diffuse -> decay tick."
+        proves: ["the complete fluid pheromone sim — the target's M1 finished"]
+        depends_on: [SG-5.2]
+        done_when: "no NaN/Inf over 1000 ticks (Tester probe); mass roughly conserved absent sources; visually advects."
+        de_risks: "the numerically-trickiest piece in the whole project."
+        loop: "This rung's spec quotes the real fluid-sim section directly. Bias the reviewer toward instability cases."
+
+      - id: SG-5.4
+        title: "Ants on GPU / scale up N"
+        kind: [performance, simulation, behavior]
+        build: "Agents read the GPU field and act; push N up by orders of magnitude; profile with SG-3.1."
+        proves: ["scale — the thousands-of-agents performance bet", "GPU field <-> agent read path"]
+        depends_on: [SG-5.3, SG-2.3, SG-3.1]
+        done_when: "target N runs at an acceptable frame budget; per-phase profile stays within expected share."
+        de_risks: "the performance ceiling the whole 'WebGPU instead of CPU' choice exists to clear."
+        loop: "Spec the agent-data layout (SoA? texture? buffer?); this is a real performance design decision."
+
+  # ----------------------------------------------------------------------------
+  - id: T6
+    name: "Integration toward the real target (graduation)"
+    goal: "Compose the proven pieces into a small but complete colony. If the substrate is trustworthy (graduation_gate), this is where the curriculum hands off to the real architecture spec."
+    subgames:
+
+      - id: SG-6.1
+        title: "Integrated small colony"
+        kind: [simulation, behavior, ui, performance]
+        build: "GPU fields + agents + IAUS behavior + canvas UI + AOP profiling, on a small map, data-driven config."
+        proves: ["essentially the target's M1–M3, integrated at small scale — the full vertical slice"]
+        depends_on: [SG-5.4, SG-4.3, SG-3.2, SG-3.1]
+        done_when: "a foraging loop is observable (ants find food, lay trails, return); headless hash stable; profile healthy."
+        de_risks: "system integration — the last thing that only reveals itself when all pieces run together."
+        loop: >
+          By now each piece already has a mini-spec; the integration's spec is mostly the seams between them.
+          Assembled, those mini-specs ARE the project's architecture document. From here, point the swarm at
+          the real milestone set — the toys have done their job.
+
+# ------------------------------------------------------------------------------
+# CROSS-CUTTING NOTES
+# ------------------------------------------------------------------------------
+regression_set:
+  keep_as_coordination_tests: [SG-0.3, SG-0.4, SG-1.1, SG-1.3, SG-2.1, SG-3.4]
+  why: >
+    Cheap, fast, and each exercises a distinct coordination shape (parallel fan-out,
+    goal-judge, double-buffer build, field lifecycle, scorer reuse, headless verification).
+    Re-run them whenever you change prompts / agent-instruction files / skills, to confirm
+    a coordination fix didn't regress another (VI.5). They are your unit tests for the
+    natural-language coordination layer.
+
+what_each_rung_leaves_behind:
+  components: "ASCII renderer, grid+tick engine, field kernels, IAUS scorer, reservation protocol, config loader, headless harness, canvas renderer, WGSL passes."
+  substrate: "the more valuable output — sharpened decomposition prompts, acceptance-criteria phrasings, profile descriptions, and skills that reliably turn a spec into working code."
+
+parallelism_hint: >
+  T3 spikes (3.1–3.4) can run alongside T1–T2 once a sim exists to instrument. T0 is
+  strictly first (it shakes out the machine). T4 needs the renderer seam from a stable
+  CPU sim; T5 needs T3.4's headless harness for objective acceptance. The dispatcher
+  schedules all of this off depends_on — you don't hand-order it (Part III).
+
+agent_instruction: >
+  Architect: this is a seed. Before executing, RESEARCH and refine it — validate the
+  rung order against the real spec, split anything too big to one-shot, merge anything
+  trivial, and add rungs for subsystems this seed missed. Then emit each rung as a
+  WorkGraph (or a triage card for auto-decompose). Bias toward MORE, SMALLER rungs when
+  unsure: the whole thesis is that small things one-shot and large things don't.
